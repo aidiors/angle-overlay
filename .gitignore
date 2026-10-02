@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+.ruff_cache/
+*.log
+models/*.pt
+models/*.onnx
+!models/angle-fp32.onnx
+!models/angle-directml.onnx
+models/*.data
+models/*.rtx
+!models/angle-bf16.rtx
+models/*.engine
+build/
+dist/
+release-assets/
+*.cache

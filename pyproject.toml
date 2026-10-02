@@ -1,0 +1,61 @@
+[build-system]
+requires = ["uv_build>=0.12.19,<0.13"]
+build-backend = "uv_build"
+
+[project]
+name = "angle-overlay"
+version = "0.1.0"
+description = "Windows angle overlay with RTX, DirectML GPU, and CPU inference"
+readme = "README.md"
+requires-python = ">=3.14,<3.15"
+license = "Apache-2.0"
+dependencies = [
+  "numpy>=2,<3", "pillow>=10,<13", "dxcam[winrt]>=0.3,<1", "mss>=10,<12",
+  "customtkinter==6.0.0",
+  "pystray==0.19.5",
+  "onnxruntime-directml==1.24.4; sys_platform == 'win32'",
+  "onnxruntime>=1.30,<2; sys_platform != 'win32'",
+]
+
+[project.scripts]
+angle-overlay = "angle_overlay.launcher:main"
+
+[tool.uv.build-backend]
+module-name = "angle_overlay"
+
+[tool.uv]
+default-groups = ["dev"]
+
+[dependency-groups]
+dev = ["pre-commit>=4.6,<5", "ruff>=0.16,<0.17", "ty>=0.0.84,<0.1"]
+build = ["pyinstaller>=6.22,<7"]
+export = ["torch>=2.14,<2.15", "torchvision>=0.29,<0.30", "timm==1.0.30",
+          "onnx>=1.20,<2", "onnxscript>=0.5,<1"]
+rtx = [
+    "tensorrt-rtx==1.6.1.120",
+    "cuda-python>=13,<14",
+    "nvidia-cuda-runtime==13.0.96",
+]
+
+[tool.uv.sources]
+torch = [{ index = "pytorch-cu130", marker = "sys_platform == 'linux' or sys_platform == 'win32'" }]
+torchvision = [{ index = "pytorch-cu130", marker = "sys_platform == 'linux' or sys_platform == 'win32'" }]
+
+[[tool.uv.index]]
+name = "pytorch-cu130"
+url = "https://download.pytorch.org/whl/cu130"
+explicit = true
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.ruff.format]
+line-ending = "lf"
+docstring-code-format = true
+
+[tool.ty.environment]
+python-version = "3.14"
+root = ["./src"]

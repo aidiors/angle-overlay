@@ -1,0 +1,32 @@
+{
+  "format_version": 1,
+  "architecture": "ConvNeXt Tiny + frozen fine CNN128",
+  "input_shape": [
+    1,
+    3,
+    256,
+    256
+  ],
+  "input_dtype": "float32",
+  "input_range": "RGB0..255",
+  "output": "[sin(2theta),cos(2theta)]",
+  "crop_size": [
+    384,
+    65
+  ],
+  "window_deg": 4.0,
+  "fine_channels": [
+    16,
+    32,
+    128
+  ],
+  "fine_angular_kernel": 23,
+  "fine_radial_antialias": true,
+  "source_run_id": "75917c7888cf457a9b7c133b80595f5e",
+  "source_sha256": "8b7ed29cdd35d599b8065a17c985217e7e56cbf044f375382056fe5d6bf2d695",
+  "precision": "fp32",
+  "files": {
+    "angle-fp32.onnx": "e586592f412d504a104c79a1f10c641f3ee88d2aaaa6e198543df6f9cfca35cb"
+  },
+  "release_validation": "Local validation completed; public release acceptance pending"
+}

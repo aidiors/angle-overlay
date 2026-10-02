@@ -1,0 +1,115 @@
+name: Release Windows
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (leave blank for the package version)"
+        required: false
+        type: string
+      draft:
+        description: "Create a draft release"
+        type: boolean
+        default: false
+      prerelease:
+        description: "Mark as prerelease"
+        type: boolean
+        default: false
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-releases-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  checks:
+    uses: ./.github/workflows/checks.yml
+
+  build:
+    needs: checks
+    runs-on: windows-latest
+    timeout-minutes: 45
+    outputs:
+      tag: ${{ steps.identity.outputs.tag }}
+      commit: ${{ steps.identity.outputs.commit }}
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          lfs: true
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7
+        with:
+          enable-cache: true
+          python-version: "3.14"
+      - name: Install application and build dependencies
+        run: uv sync --locked --no-default-groups --group build --group rtx
+      - name: Validate models, package version and tag
+        id: identity
+        env:
+          REQUESTED_TAG: ${{ github.event.release.tag_name || inputs.tag }}
+        run: uv run --no-sync python tools/check_release.py --tag "$env:REQUESTED_TAG"
+      - name: Build Windows executable
+        run: uv run --no-sync pyinstaller --noconfirm packaging/angle-overlay.spec
+      - name: Package application, models and notices
+        run: uv run --no-sync python tools/prepare_release.py --zip
+      - name: Verify frozen bundle without Python or CUDA on PATH
+        run: uv run --no-sync python tools/check_release.py --bundle dist/AngleOverlay
+      - name: Save release assets
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: windows-release
+          path: |
+            release-assets/*.zip
+            release-assets/*.sha256
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: windows-release
+          path: release-assets
+      - name: Create release or attach assets to the existing release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ needs.build.outputs.tag }}
+          COMMIT: ${{ needs.build.outputs.commit }}
+          DRAFT: ${{ inputs.draft && 'true' || 'false' }}
+          PRERELEASE: ${{ (inputs.prerelease || github.event.release.prerelease) && 'true' || 'false' }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          assets=(release-assets/*.zip release-assets/*.sha256)
+          if [[ ${#assets[@]} -ne 2 ]]; then
+            echo "Expected one Windows ZIP and its SHA256 file" >&2
+            exit 1
+          fi
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "${assets[@]}" --clobber
+          else
+            flags=()
+            [[ "$DRAFT" == "true" ]] && flags+=(--draft)
+            [[ "$PRERELEASE" == "true" ]] && flags+=(--prerelease)
+            gh release create "$TAG" "${assets[@]}" --target "$COMMIT" \
+              --title "Angle Overlay $TAG" \
+              --notes "Download and extract the Windows x64 ZIP, then open AngleOverlay.exe. Python is not required. User guides in English and Russian are included. / Скачайте и распакуйте Windows x64 ZIP, затем откройте AngleOverlay.exe. Python не нужен. В архиве есть руководства на русском и английском." \
+              "${flags[@]}"
+          fi

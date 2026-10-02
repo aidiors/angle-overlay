@@ -1,0 +1,8 @@
+* text=auto eol=lf
+*.pt binary
+*.onnx binary
+*.rtx binary
+*.zip binary
+models/angle-fp32.onnx filter=lfs diff=lfs merge=lfs -text
+models/angle-directml.onnx filter=lfs diff=lfs merge=lfs -text
+models/angle-bf16.rtx filter=lfs diff=lfs merge=lfs -text

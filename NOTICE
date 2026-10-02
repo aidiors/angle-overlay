@@ -1,0 +1,17 @@
+Angle Overlay
+Copyright Angle Overlay contributors
+
+The application's original source code is licensed under Apache License 2.0.
+Third-party packages and native libraries retain their own licenses.
+Model provenance and third-party terms are described in TECHNICAL.md and TECHNICAL.ru.md.
+
+The Windows build contains NVIDIA TensorRT-RTX and CUDA components.
+These components are not licensed under this project's Apache license.
+The exact wheel-provided license texts accompany application bundles in licenses/.
+The build also contains ONNX Runtime/DirectML and CustomTkinter components.
+Their original wheel-provided notices accompany the application.
+
+The notification icon uses pystray 0.19.5 by Moses Palmer, licensed under LGPLv3.
+Unmodified, replaceable library sources are in _internal/pystray/ in Windows bundles;
+COPYING and COPYING.LGPL are included in licenses/. Upstream source:
+https://github.com/moses-palmer/pystray/tree/v0.19.5
